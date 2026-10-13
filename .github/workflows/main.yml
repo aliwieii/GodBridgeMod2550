@@ -1,5 +1,6 @@
 name: Build GodBridgeUltra
 
+# شروط تشغيل خطة البناء: يدوياً أو عند رفع كود جديد
 on:
   workflow_dispatch:
   push:
@@ -9,31 +10,30 @@ on:
 
 jobs:
   build:
+    # استخدام بيئة أوبونتو
     runs-on: ubuntu-latest
 
     steps:
-      # 1. سحب كود المشروع إلى جهاز البناء
+      # الخطوة 1: تنزيل ملفات مشروعك من المستودع إلى جهاز البناء
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. تثبيت Java 8 المتوافقة مع Forge 1.8.9
+      # الخطوة 2: تثبيت بيئة Java 8 المطلوبة حصراً لـ Forge 1.8.9
       - name: Set up Java 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
 
-      # 3. إعداد أداة التجميع Gradle 2.14.1
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '2.14.1'
+      # الخطوة 3: إعطاء صلاحية التنفيذ لملف gradlew داخل نظام لينكس
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-      # 4. بناء ملف المود والتنظيف المسبق
-      - name: Build mod
-        run: gradle clean build --no-daemon --stacktrace
+      # الخطوة 4: تشغيل البناء باستخدام Gradle Wrapper المدمج في المشروع وتجاوز مشاكل الكاش
+      - name: Build mod with Gradle Wrapper
+        run: ./gradlew clean build --no-daemon --stacktrace
 
-      # 5. رفع ملف الـ JAR الناتج ليكون جاهزاً للتحميل
+      # الخطوة 5: رفع ملف الـ JAR الناتج ليكون متاحاً للتحميل تحت قسم Artifacts
       - name: Upload JAR
         if: success()
         uses: actions/upload-artifact@v4
