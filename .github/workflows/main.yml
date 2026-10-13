@@ -1,37 +1,43 @@
 name: Build GodBridgeUltra
 
 on:
-workflow_dispatch:
-push:
-branches:
-- main
-- master
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
-build:
-runs-on: ubuntu-latest
-steps:
-- name: Checkout repository
-uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
 
-  - name: Set up Java 8
-    uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: '8'
+    steps:
+      # 1. سحب كود المشروع إلى جهاز البناء
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Set up Gradle
-    uses: gradle/actions/setup-gradle@v3
-    with:
-      gradle-version: '2.14.1'
+      # 2. تثبيت Java 8 المتوافقة مع Forge 1.8.9
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
 
-  - name: Build mod
-    run: gradle clean build --no-daemon --stacktrace
+      # 3. إعداد أداة التجميع Gradle 2.14.1
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '2.14.1'
 
-  - name: Upload JAR
-    if: success()
-    uses: actions/upload-artifact@v4
-    with:
-      name: GodBridgeUltra-1.8.9-JAR
-      path: build/libs/*.jar
-      if-no-files-found: error
+      # 4. بناء ملف المود والتنظيف المسبق
+      - name: Build mod
+        run: gradle clean build --no-daemon --stacktrace
+
+      # 5. رفع ملف الـ JAR الناتج ليكون جاهزاً للتحميل
+      - name: Upload JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GodBridgeUltra-1.8.9-JAR
+          path: build/libs/*.jar
+          if-no-files-found: error
