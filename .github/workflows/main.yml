@@ -1,6 +1,5 @@
 name: Build GodBridgeUltra
 
-# شروط تشغيل خطة البناء: يدوياً أو عند رفع كود جديد
 on:
   workflow_dispatch:
   push:
@@ -10,34 +9,46 @@ on:
 
 jobs:
   build:
-    # استخدام بيئة أوبونتو
     runs-on: ubuntu-latest
 
     steps:
-      # الخطوة 1: تنزيل ملفات مشروعك من المستودع إلى جهاز البناء
+      # 1. سحب ملفات المشروع من المستودع
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # الخطوة 2: تثبيت بيئة Java 8 المطلوبة حصراً لـ Forge 1.8.9
+      # 2. تثبيت Java 8 باستخدام الإصدار الحديث v5 لتفادي التحذيرات
       - name: Set up Java 8
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '8'
 
-      # الخطوة 3: إعطاء صلاحية التنفيذ لملف gradlew داخل نظام لينكس
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      # 3. معالجة نهايات أسطر الويندوز وإعطاء صلاحية التشغيل لملف gradlew
+      - name: Prepare Gradle Wrapper
+        run: |
+          # البحث عن ملف gradlew وإصلاح نهايات الأسطر وإعطائه صلاحية التنفيذ
+          find . -name "gradlew" -exec sed -i 's/\r$//' {} +
+          find . -name "gradlew" -exec chmod +x {} +
 
-      # الخطوة 4: تشغيل البناء باستخدام Gradle Wrapper المدمج في المشروع وتجاوز مشاكل الكاش
-      - name: Build mod with Gradle Wrapper
-        run: ./gradlew clean build --no-daemon --stacktrace
+      # 4. بناء ملف المود والتنظيف
+      - name: Build mod
+        run: |
+          # التحقق مما إذا كانت الملفات في المسار الرئيسي أو داخل مجلد فرعي
+          if [ -f "./gradlew" ]; then
+            ./gradlew clean build --no-daemon --stacktrace
+          elif [ -f "./GodBridgeUltra/gradlew" ]; then
+            cd GodBridgeUltra
+            ./gradlew clean build --no-daemon --stacktrace
+          else
+            echo "لم يتم العثور على ملف gradlew في المستودع!"
+            exit 1
+          fi
 
-      # الخطوة 5: رفع ملف الـ JAR الناتج ليكون متاحاً للتحميل تحت قسم Artifacts
+      # 5. رفع ملف الـ JAR التنفيذي
       - name: Upload JAR
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: GodBridgeUltra-1.8.9-JAR
-          path: build/libs/*.jar
+          path: "**/build/libs/*.jar"
           if-no-files-found: error
