@@ -1,0 +1,49 @@
+name: Build GodBridgeUltra
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Verify project ZIP
+        run: |
+          test -f GodBridgeUltra-project-1.zip
+          unzip -t GodBridgeUltra-project-1.zip
+
+      - name: Extract project
+        run: |
+          unzip -q GodBridgeUltra-project-1.zip -d project
+          test -f project/GodBridgeUltra/build.gradle
+          test -d project/GodBridgeUltra/src/main/java
+
+      - name: Install Gradle 2.14.1
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-2.14.1-bin.zip -O /tmp/gradle.zip
+          sudo unzip -q /tmp/gradle.zip -d /opt
+
+      - name: Build mod
+        working-directory: project/GodBridgeUltra
+        run: /opt/gradle-2.14.1/bin/gradle clean build --no-daemon --stacktrace
+
+      - name: Upload JAR
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GodBridgeUltra-1.8.9-JAR
+          path: project/GodBridgeUltra/build/libs/*.jar
+          if-no-files-found: error
